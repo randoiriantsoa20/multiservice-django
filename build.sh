@@ -12,5 +12,7 @@ user, created = Utilisateur.objects.get_or_create(
     defaults={'nom_complet': 'Administrateur', 'role_privilege': 'admin'}
 )
 user.set_password('M@nager1')
+user.role_privilege = 'admin'
 user.save()
+print('=== MOT DE PASSE ADMIN MIS A JOUR ===')
 "
