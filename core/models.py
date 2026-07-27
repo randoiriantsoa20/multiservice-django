@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.hashers import make_password, check_password
 
 class UtilisateurManager(BaseUserManager):
     def create_user(self, identifiant, password=None, **extra_fields):
@@ -33,13 +34,18 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         db_table = 't_utilisateur'
         managed = False
 
+    # Redirection de la lecture de 'password' vers 'mot_de_passe'
     @property
     def password(self):
         return self.mot_de_passe
 
-    @password.setter
-    def password(self, raw_password):
-        self.set_password(raw_password)
+    # Surcharge propre des méthodes d'authentification
+    def set_password(self, raw_password):
+        if raw_password:
+            self.mot_de_passe = make_password(raw_password)
+
+    def check_password(self, raw_password):
+        return check_password(raw_password, self.mot_de_passe)
 
     @property
     def is_staff(self):
