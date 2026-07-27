@@ -8,8 +8,6 @@ class UtilisateurManager(BaseUserManager):
         user = self.model(identifiant=identifiant, **extra_fields)
         if password:
             user.set_password(password)
-        else:
-            user.set_unusable_password()
         user.save(using=self._db)
         return user
 
@@ -23,7 +21,8 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
     mot_de_passe = models.CharField(max_length=255, db_column='mot_de_passe')
     nom_complet = models.CharField(max_length=100, blank=True, null=True)
     role_privilege = models.CharField(max_length=30, default='user')
-    date_creation = models.DateTimeField(auto_now_add=True)
+    date_creation = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    last_login = models.DateTimeField(blank=True, null=True)
 
     USERNAME_FIELD = 'identifiant'
     REQUIRED_FIELDS = []
@@ -32,7 +31,7 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         db_table = 't_utilisateur'
-        managed = False  # Django ne modifiera pas la structure de la table dans Neon
+        managed = False
 
     @property
     def password(self):
@@ -44,7 +43,7 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
 
     @property
     def is_staff(self):
-        return self.role_privilege in ['admin', 'superuser']
+        return True
 
     @property
     def is_superuser(self):
