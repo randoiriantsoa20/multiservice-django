@@ -1,0 +1,58 @@
+from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+
+class UtilisateurManager(BaseUserManager):
+    def create_user(self, identifiant, password=None, **extra_fields):
+        if not identifiant:
+            raise ValueError("L'identifiant est obligatoire")
+        user = self.model(identifiant=identifiant, **extra_fields)
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, identifiant, password=None, **extra_fields):
+        extra_fields.setdefault('role_privilege', 'admin')
+        return self.create_user(identifiant, password, **extra_fields)
+
+class Utilisateur(AbstractBaseUser, PermissionsMixin):
+    id_utilisateur = models.AutoField(primary_key=True)
+    identifiant = models.CharField(max_length=100, unique=True)
+    mot_de_passe = models.CharField(max_length=255, db_column='mot_de_passe')
+    nom_complet = models.CharField(max_length=100, blank=True, null=True)
+    role_privilege = models.CharField(max_length=30, default='user')
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    USERNAME_FIELD = 'identifiant'
+    REQUIRED_FIELDS = []
+
+    objects = UtilisateurManager()
+
+    class Meta:
+        db_table = 't_utilisateur'
+        managed = False  # Django ne modifiera pas la structure de la table dans Neon
+
+    @property
+    def password(self):
+        return self.mot_de_passe
+
+    @password.setter
+    def password(self, raw_password):
+        self.set_password(raw_password)
+
+    @property
+    def is_staff(self):
+        return self.role_privilege in ['admin', 'superuser']
+
+    @property
+    def is_superuser(self):
+        return self.role_privilege in ['admin', 'superuser']
+
+    @property
+    def is_active(self):
+        return True
+
+    def __str__(self):
+        return self.identifiant
