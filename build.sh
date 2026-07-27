@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# Arrêter le script si une commande échoue
 set -o errexit
 
 pip install -r requirements.txt
 
 python manage.py collectstatic --no-input
-python manage.py migrate
 
 python manage.py shell -c "
-from django.contrib.auth import get_user_model
-User = get_user_model()
-if not User.objects.filter(username='admin').exists():
-    User.objects.create_superuser('admin', 'admin@example.com', 'M@nager1!')
+from core.models import Utilisateur
+if not Utilisateur.objects.filter(identifiant='admin').exists():
+    user = Utilisateur(identifiant='admin', nom_complet='Administrateur', role_privilege='admin')
+    user.set_password('M@nager1')
+    user.save()
 "
