@@ -71,3 +71,14 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Changez DEBUG à True temporairement pour voir les erreurs détaillées
+DEBUG = True
+
+ALLOWED_HOSTS = ['*']
+
+# Ajouter cette ligne pour autoriser les requêtes HTTPS de Render
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+]
+
