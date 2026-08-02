@@ -79,5 +79,6 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    'core.models.CustomAuthBackend',
+    'core.admin.CustomAuthBackend',
 ]
+
