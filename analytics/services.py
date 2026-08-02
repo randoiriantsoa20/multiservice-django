@@ -1,12 +1,12 @@
 from django.db.models import Sum
 from django.db.models.functions import ExtractMonth, ExtractYear
-from .models import CAJournalier
+from core.models import CaJournalier  # Importation depuis core.models
 
 class CAService:
     @staticmethod
     def get_available_years():
         return list(
-            CAJournalier.objects.annotate(year=ExtractYear('date_ca'))
+            CaJournalier.objects.annotate(year=ExtractYear('date_ca'))
             .values_list('year', flat=True)
             .distinct()
             .order_by('-year')
@@ -15,7 +15,7 @@ class CAService:
     @staticmethod
     def get_yearly_aggregates():
         results = (
-            CAJournalier.objects.annotate(year=ExtractYear('date_ca'))
+            CaJournalier.objects.annotate(year=ExtractYear('date_ca'))
             .values('year')
             .annotate(total_ca=Sum('montant_ca'))
             .order_by('year')
@@ -28,7 +28,7 @@ class CAService:
     @staticmethod
     def get_monthly_aggregates(year):
         results = (
-            CAJournalier.objects.filter(date_ca__year=year)
+            CaJournalier.objects.filter(date_ca__year=year)
             .annotate(month=ExtractMonth('date_ca'))
             .values('month')
             .annotate(total_ca=Sum('montant_ca'))
@@ -41,10 +41,10 @@ class CAService:
 
     @staticmethod
     def compare_daily_stats(day, month, year1, year2):
-        obj_y1 = CAJournalier.objects.filter(
+        obj_y1 = CaJournalier.objects.filter(
             date_ca__year=year1, date_ca__month=month, date_ca__day=day
         ).first()
-        obj_y2 = CAJournalier.objects.filter(
+        obj_y2 = CaJournalier.objects.filter(
             date_ca__year=year2, date_ca__month=month, date_ca__day=day
         ).first()
 
