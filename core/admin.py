@@ -1,6 +1,5 @@
 from django.contrib import admin
-from django.contrib.admin.forms import AdminAuthenticationForm
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, login
 from django.contrib.auth.hashers import check_password as django_check_password
 from django import forms
 
@@ -21,13 +20,21 @@ class CustomAdminLoginForm(forms.Form):
 
         if username and password:
             try:
-                user = Utilisateur.objects.get(identifiant=username)
+                # 1. Recherche insensible à la casse et nettoyage des espaces
+                user = Utilisateur.objects.get(identifiant__iexact=username.strip())
+                
+                # 2. Vérification directe du hash mot_de_passe
                 if user.mot_de_passe and django_check_password(password, user.mot_de_passe):
                     self.user_cache = user
                 else:
                     raise forms.ValidationError("Identifiant ou mot de passe incorrect.")
             except Utilisateur.DoesNotExist:
                 raise forms.ValidationError("Identifiant ou mot de passe incorrect.")
+
+        # 3. Authentification effective de la session HTTP
+        if self.user_cache and self.request:
+            login(self.request, self.user_cache, backend='django.contrib.auth.backends.ModelBackend')
+
         return self.cleaned_data
 
     def get_user(self):
@@ -41,7 +48,6 @@ class CustomAdminSite(admin.AdminSite):
         return request.user.is_authenticated
 
 
-# Remplacement du site admin par défaut
 admin.site = CustomAdminSite()
 admin.sites.site = admin.site
 
