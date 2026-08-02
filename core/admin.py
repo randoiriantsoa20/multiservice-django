@@ -1,26 +1,49 @@
 from django.contrib import admin
-from django.contrib.auth.backends import BaseBackend
+from django.contrib.admin.forms import AdminAuthenticationForm
+from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password as django_check_password
-from .models import Utilisateur
+from django import forms
 
-class CustomAuthBackend(BaseBackend):
-    def authenticate(self, request, username=None, password=None, **kwargs):
-        if username is None:
-            username = kwargs.get('identifiant')
-        
-        try:
-            user = Utilisateur.objects.get(identifiant=username)
-            if user.mot_de_passe and django_check_password(password, user.mot_de_passe):
-                return user
-        except Utilisateur.DoesNotExist:
-            return None
-        return None
+Utilisateur = get_user_model()
 
-    def get_user(self, user_id):
-        try:
-            return Utilisateur.objects.get(pk=user_id)
-        except Utilisateur.DoesNotExist:
-            return None
+class CustomAdminLoginForm(forms.Form):
+    username = forms.CharField(label="Identifiant")
+    password = forms.CharField(label="Mot de passe", widget=forms.PasswordInput)
+
+    def __init__(self, request=None, *args, **kwargs):
+        self.request = request
+        self.user_cache = None
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        username = self.cleaned_data.get('username')
+        password = self.cleaned_data.get('password')
+
+        if username and password:
+            try:
+                user = Utilisateur.objects.get(identifiant=username)
+                if user.mot_de_passe and django_check_password(password, user.mot_de_passe):
+                    self.user_cache = user
+                else:
+                    raise forms.ValidationError("Identifiant ou mot de passe incorrect.")
+            except Utilisateur.DoesNotExist:
+                raise forms.ValidationError("Identifiant ou mot de passe incorrect.")
+        return self.cleaned_data
+
+    def get_user(self):
+        return self.user_cache
+
+
+class CustomAdminSite(admin.AdminSite):
+    login_form = CustomAdminLoginForm
+
+    def has_permission(self, request):
+        return request.user.is_authenticated
+
+
+# Remplacement du site admin par défaut
+admin.site = CustomAdminSite()
+admin.sites.site = admin.site
 
 @admin.register(Utilisateur)
 class UtilisateurAdmin(admin.ModelAdmin):
