@@ -14,5 +14,4 @@ user, created = Utilisateur.objects.get_or_create(
 user.set_password('M@nager1')
 user.role_privilege = 'admin'
 user.save()
-print('=== MOT DE PASSE ADMIN MIS A JOUR ===')
 "
