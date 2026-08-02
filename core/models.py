@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.hashers import make_password, check_password as django_check_password
 
 class UtilisateurManager(BaseUserManager):
     def create_user(self, identifiant, password=None, **extra_fields):
@@ -43,7 +43,9 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
             self.mot_de_passe = make_password(raw_password)
 
     def check_password(self, raw_password):
-        return check_password(raw_password, self.mot_de_passe)
+        if not self.mot_de_passe:
+            return False
+        return django_check_password(raw_password, self.mot_de_passe)
 
     @property
     def is_staff(self):
