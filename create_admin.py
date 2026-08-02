@@ -11,9 +11,9 @@ try:
         identifiant='admin',
         defaults={'nom_complet': 'Administrateur', 'role_privilege': 'admin'}
     )
-    user.set_password('MonMotDePasse123!')
+    user.set_password('M@nager1')
     user.role_privilege = 'admin'
     user.save()
-    print("=== ADMIN USER CREATED / UPDATED SUCCESSFULLY ===")
+    print("=== SUCCÈS : Mot de passe de 'admin' mis à jour avec succès ! ===")
 except Exception as e:
-    print(f"=== ERROR CREATING ADMIN USER: {e} ===")
+    print(f"=== ERREUR lors de la mise à jour : {e} ===")
