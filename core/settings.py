@@ -85,5 +85,6 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    'core.models.CustomAuthBackend',
+    'django.contrib.auth.backends.ModelBackend',
 ]
+
