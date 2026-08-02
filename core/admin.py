@@ -3,12 +3,12 @@ from django.contrib.auth import get_user_model, login
 from django.contrib.auth.hashers import check_password as django_check_password
 from django import forms
 
-# Importation des modèles métiers depuis models.py
-from .models import Service, Transaction, CaisseJournaliere
+# Importation de l'ensemble des modèles métiers
+from .models import Operateur, Service, CaJournalier, Depense, Production
 
 Utilisateur = get_user_model()
 
-# --- Configuration du Formulaire & du Site Admin ---
+# --- Formulaire & Site Admin Personnalisés ---
 class CustomAdminLoginForm(forms.Form):
     username = forms.CharField(label="Identifiant")
     password = forms.CharField(label="Mot de passe", widget=forms.PasswordInput)
@@ -52,7 +52,7 @@ admin.site = CustomAdminSite()
 admin.sites.site = admin.site
 
 
-# --- Enregistrement des Modèles dans l'Admin ---
+# --- ENREGISTREMENT ET CONFIGURATION DE L'ADMIN ---
 
 @admin.register(Utilisateur)
 class UtilisateurAdmin(admin.ModelAdmin):
@@ -61,23 +61,36 @@ class UtilisateurAdmin(admin.ModelAdmin):
     list_filter = ('role_privilege',)
 
 
+@admin.register(Operateur)
+class OperateurAdmin(admin.ModelAdmin):
+    list_display = ('id_operateur', 'nom_operateur', 'role_operateur', 'utilisateur')
+    search_fields = ('nom_operateur', 'role_operateur')
+
+
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ('id_service', 'nom_service', 'tarif_base', 'est_actif')
-    search_fields = ('nom_service',)
-    list_filter = ('est_actif',)
+    list_display = ('id_service', 'libelle_service', 'tarif', 'temps_estime_mn')
+    search_fields = ('libelle_service',)
 
 
-@admin.register(Transaction)
-class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('id_transaction', 'date_heure', 'service', 'utilisateur', 'montant', 'mode_paiement')
-    search_fields = ('id_transaction', 'remarques')
-    list_filter = ('mode_paiement', 'date_heure', 'service')
-    date_hierarchy = 'date_heure'  # Navigation rapide par calendrier/date
+@admin.register(CaJournalier)
+class CaJournalierAdmin(admin.ModelAdmin):
+    list_display = ('date_ca', 'montant_ca')
+    search_fields = ('date_ca',)
+    date_hierarchy = 'date_ca'
 
 
-@admin.register(CaisseJournaliere)
-class CaisseJournaliereAdmin(admin.ModelAdmin):
-    list_display = ('date_jour', 'fond_de_caisse', 'total_entrees', 'total_sorties', 'solde_final', 'est_cloturee')
-    list_filter = ('est_cloturee', 'date_jour')
-    date_hierarchy = 'date_jour'
+@admin.register(Depense)
+class DepenseAdmin(admin.ModelAdmin):
+    list_display = ('id', 'date_depense', 'source_depense', 'libelle', 'montant_virement')
+    search_fields = ('libelle', 'source_depense')
+    list_filter = ('source_depense', 'date_depense')
+    date_hierarchy = 'date_depense'
+
+
+@admin.register(Production)
+class ProductionAdmin(admin.ModelAdmin):
+    list_display = ('id_production', 'date_production', 'service', 'operateur', 'quantite', 'montant_encaisse')
+    search_fields = ('remarques',)
+    list_filter = ('service', 'operateur', 'date_production')
+    date_hierarchy = 'date_production'
