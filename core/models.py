@@ -2,8 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.contrib.auth.hashers import make_password, check_password as django_check_password
 
-# --- GESTIONNAIRE & MODÈLE UTILISATEUR ---
-
 class UtilisateurManager(BaseUserManager):
     def create_user(self, identifiant, password=None, **extra_fields):
         if not identifiant:
@@ -36,6 +34,7 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         db_table = 't_utilisateur'
         managed = False
 
+    # 1. Alias obligatoire pour que Django voie le champ physique `mot_de_passe` comme `password`
     @property
     def password(self):
         return self.mot_de_passe
@@ -54,9 +53,11 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
             return False
         return django_check_password(raw_password, self.mot_de_passe)
 
+    # 2. Forcer Django à valider que le mot de passe est exploitable
     def has_usable_password(self):
         return bool(self.mot_de_passe)
 
+    # 3. Méthodes de permissions indispensables pour l'interface Admin
     @property
     def is_staff(self):
         return True
@@ -76,40 +77,18 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         return True
 
     def __str__(self):
-        return self.identifiant or f"Utilisateur #{self.id_utilisateur}"
+        return self.identifiant
+        
+        
 
-
-# --- MODÈLES MÉTIERS NEON POSTGRESQL ---
-
-class Operateur(models.Model):
-    id_operateur = models.AutoField(primary_key=True)
-    nom_operateur = models.CharField(max_length=50, unique=True, verbose_name="Nom de l'opérateur")
-    role_operateur = models.CharField(max_length=50, blank=True, null=True, verbose_name="Rôle")
-    utilisateur = models.OneToOneField(
-        Utilisateur, 
-        on_delete=models.DO_NOTHING, 
-        db_column='id_utilisateur', 
-        unique=True, 
-        blank=True, 
-        null=True,
-        verbose_name="Compte Utilisateur"
-    )
-
-    class Meta:
-        db_table = 't_operateur'
-        managed = False
-        verbose_name = "Opérateur"
-        verbose_name_plural = "Opérateurs"
-
-    def __str__(self):
-        return self.nom_operateur
-
+# --- Nouveaux modèles métiers pour le Multiservice ---
 
 class Service(models.Model):
     id_service = models.AutoField(primary_key=True)
-    libelle_service = models.CharField(max_length=50, unique=True, verbose_name="Libellé du service")
-    tarif = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Tarif")
-    temps_estime_mn = models.IntegerField(blank=True, null=True, verbose_name="Temps estimé (min)")
+    nom_service = models.CharField(max_length=150, verbose_name="Nom du service")
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    tarif_base = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Tarif de base")
+    est_actif = models.BooleanField(default=True, verbose_name="Actif")
 
     class Meta:
         db_table = 't_service'
@@ -118,68 +97,42 @@ class Service(models.Model):
         verbose_name_plural = "Services"
 
     def __str__(self):
-        return self.libelle_service
+        return self.nom_service
 
 
-class CaJournalier(models.Model):
-    date_ca = models.DateField(primary_key=True, verbose_name="Date")
-    montant_ca = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Chiffre d'Affaires")
-
-    class Meta:
-        db_table = 't_ca_journalier'
-        managed = False
-        verbose_name = "CA Journalier"
-        verbose_name_plural = "Chiffres d'Affaires Journaliers"
-
-    def __str__(self):
-        return f"{self.date_ca} - {self.montant_ca} Ar"
-
-
-class Depense(models.Model):
-    id = models.AutoField(primary_key=True)
-    source_depense = models.CharField(max_length=100, blank=True, null=True, verbose_name="Source / Catégorie")
-    libelle = models.CharField(max_length=255, verbose_name="Description / Libellé")
-    date_depense = models.DateField(verbose_name="Date de dépense")
-    montant_virement = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant")
+class Transaction(models.Model):
+    id_transaction = models.AutoField(primary_key=True)
+    date_heure = models.DateTimeField(auto_now_add=True, verbose_name="Date & Heure")
+    service = models.ForeignKey(Service, on_delete=models.DO_NOTHING, db_column='id_service', verbose_name="Service")
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.DO_NOTHING, db_column='id_utilisateur', verbose_name="Opérateur")
+    montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant (Ar/FCFA/$)")
+    mode_paiement = models.CharField(max_length=50, default='Espece', verbose_name="Mode de paiement")
+    remarques = models.CharField(max_length=255, blank=True, null=True, verbose_name="Notes / Détails")
 
     class Meta:
-        db_table = 't_depenses'
+        db_table = 't_transaction'
         managed = False
-        verbose_name = "Dépense"
-        verbose_name_plural = "Dépenses"
+        verbose_name = "Transaction"
+        verbose_name_plural = "Transactions"
 
     def __str__(self):
-        return f"{self.libelle} ({self.montant_virement})"
+        return f"Transaction #{self.id_transaction} - {self.montant}"
 
 
-class Production(models.Model):
-    id_production = models.AutoField(primary_key=True)
-    date_production = models.DateTimeField(verbose_name="Date & Heure")
-    quantite = models.IntegerField(default=1, verbose_name="Quantité")
-    montant_encaisse = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant encaissé")
-    operateur = models.ForeignKey(
-        Operateur, 
-        on_delete=models.DO_NOTHING, 
-        db_column='id_operateur', 
-        blank=True, 
-        null=True,
-        verbose_name="Opérateur"
-    )
-    service = models.ForeignKey(
-        Service, 
-        on_delete=models.DO_NOTHING, 
-        db_column='id_service', 
-        blank=True, 
-        null=True,
-        verbose_name="Service"
-    )
-    remarques = models.TextField(blank=True, null=True, verbose_name="Remarques")
+class CaisseJournaliere(models.Model):
+    id_caisse = models.AutoField(primary_key=True)
+    date_jour = models.DateField(unique=True, verbose_name="Date du jour")
+    fond_de_caisse = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Fond de caisse initial")
+    total_entrees = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Total Encaissements")
+    total_sorties = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Total Dépenses")
+    solde_final = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Solde de clôture")
+    est_cloturee = models.BooleanField(default=False, verbose_name="Caisse Clôturée")
 
     class Meta:
-        db_table = 't_production'
+        db_table = 't_caisse_journaliere'
         managed = False
-        verbose_name = "Production / Transaction"
-        verbose_name_plural = "Productions / Transactions"
+        verbose_name = "Caisse Journalière"
+        verbose_name_plural = "Caisses Journalières"
 
     def __str__(self):
-        return f"Prod #{self.id_production} - {self.montant_encaisse}"
+        return f"Caisse du {self.date_jour}"
