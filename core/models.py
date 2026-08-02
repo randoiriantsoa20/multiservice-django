@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.hashers import make_password, check_password
 
 class UtilisateurManager(BaseUserManager):
@@ -34,12 +35,10 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         db_table = 't_utilisateur'
         managed = False
 
-    # Redirection de la lecture de 'password' vers 'mot_de_passe'
     @property
     def password(self):
         return self.mot_de_passe
 
-    # Surcharge propre des méthodes d'authentification
     def set_password(self, raw_password):
         if raw_password:
             self.mot_de_passe = make_password(raw_password)
@@ -61,3 +60,15 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.identifiant
+
+# Backend d'authentification personnalisé pour forcer la vérification sur mot_de_passe
+class CustomAuthBackend(ModelBackend):
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        if username is None:
+            username = kwargs.get('identifiant')
+        try:
+            user = Utilisateur.objects.get(identifiant=username)
+            if user.check_password(password):
+                return user
+        except Utilisateur.DoesNotExist:
+            return None
