@@ -78,3 +78,61 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.identifiant
+        
+        
+
+# --- Nouveaux modèles métiers pour le Multiservice ---
+
+class Service(models.Model):
+    id_service = models.AutoField(primary_key=True)
+    nom_service = models.CharField(max_length=150, verbose_name="Nom du service")
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    tarif_base = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Tarif de base")
+    est_actif = models.BooleanField(default=True, verbose_name="Actif")
+
+    class Meta:
+        db_table = 't_service'
+        managed = False
+        verbose_name = "Service"
+        verbose_name_plural = "Services"
+
+    def __str__(self):
+        return self.nom_service
+
+
+class Transaction(models.Model):
+    id_transaction = models.AutoField(primary_key=True)
+    date_heure = models.DateTimeField(auto_now_add=True, verbose_name="Date & Heure")
+    service = models.ForeignKey(Service, on_delete=models.DO_NOTHING, db_column='id_service', verbose_name="Service")
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.DO_NOTHING, db_column='id_utilisateur', verbose_name="Opérateur")
+    montant = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Montant (Ar/FCFA/$)")
+    mode_paiement = models.CharField(max_length=50, default='Espece', verbose_name="Mode de paiement")
+    remarques = models.CharField(max_length=255, blank=True, null=True, verbose_name="Notes / Détails")
+
+    class Meta:
+        db_table = 't_transaction'
+        managed = False
+        verbose_name = "Transaction"
+        verbose_name_plural = "Transactions"
+
+    def __str__(self):
+        return f"Transaction #{self.id_transaction} - {self.montant}"
+
+
+class CaisseJournaliere(models.Model):
+    id_caisse = models.AutoField(primary_key=True)
+    date_jour = models.DateField(unique=True, verbose_name="Date du jour")
+    fond_de_caisse = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Fond de caisse initial")
+    total_entrees = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Total Encaissements")
+    total_sorties = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Total Dépenses")
+    solde_final = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Solde de clôture")
+    est_cloturee = models.BooleanField(default=False, verbose_name="Caisse Clôturée")
+
+    class Meta:
+        db_table = 't_caisse_journaliere'
+        managed = False
+        verbose_name = "Caisse Journalière"
+        verbose_name_plural = "Caisses Journalières"
+
+    def __str__(self):
+        return f"Caisse du {self.date_jour}"
