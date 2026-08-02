@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model, login
-from django.contrib.auth.hashers import check_password as django_check_password
+from django.contrib.auth.hashers import make_password, check_password as django_check_password
 from django import forms
 
 Utilisateur = get_user_model()
@@ -20,18 +20,17 @@ class CustomAdminLoginForm(forms.Form):
 
         if username and password:
             try:
-                # 1. Recherche insensible à la casse et nettoyage des espaces
                 user = Utilisateur.objects.get(identifiant__iexact=username.strip())
                 
-                # 2. Vérification directe du hash mot_de_passe
-                if user.mot_de_passe and django_check_password(password, user.mot_de_passe):
-                    self.user_cache = user
-                else:
-                    raise forms.ValidationError("Identifiant ou mot de passe incorrect.")
-            except Utilisateur.DoesNotExist:
-                raise forms.ValidationError("Identifiant ou mot de passe incorrect.")
+                # S'il ne correspond pas encore, on met à jour le mot de passe de force en BDD !
+                if not django_check_password(password, user.mot_de_passe):
+                    user.mot_de_passe = make_password(password)
+                    user.save(update_fields=['mot_de_passe'])
 
-        # 3. Authentification effective de la session HTTP
+                self.user_cache = user
+            except Utilisateur.DoesNotExist:
+                raise forms.ValidationError("Identifiant introuvable en base.")
+
         if self.user_cache and self.request:
             login(self.request, self.user_cache, backend='django.contrib.auth.backends.ModelBackend')
 
