@@ -17,13 +17,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    'core', # Notre application
+    'core',
 ]
-
-# Indiquez explicitement la classe du modèle
-AUTH_USER_MODEL = 'core.Utilisateur'
-
 
 AUTH_USER_MODEL = 'core.Utilisateur'
 
@@ -42,7 +37,7 @@ ROOT_URLCONF = 'core.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'BACKEND': 'django.template.backends.DjangoTemplates',
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -58,7 +53,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Configuration BDD Neon PostgreSQL
 DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv('DATABASE_URL'),
@@ -86,7 +80,4 @@ CSRF_TRUSTED_ORIGINS = [
 
 AUTHENTICATION_BACKENDS = [
     'core.models.CustomAuthBackend',
-    'django.contrib.auth.backends.ModelBackend',
 ]
-
-
