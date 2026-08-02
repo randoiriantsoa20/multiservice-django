@@ -17,8 +17,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core.apps.CoreConfig',  # Pointe directement vers AppConfig pour charger le module
+    
+    'core', # Notre application
 ]
+
+# Indiquez explicitement la classe du modèle
+AUTH_USER_MODEL = 'core.Utilisateur'
+
 
 AUTH_USER_MODEL = 'core.Utilisateur'
 
