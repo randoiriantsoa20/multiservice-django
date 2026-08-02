@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-key-multiservice-2026')
 
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -17,11 +17,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core',  # Notre application
+    'core.apps.CoreConfig',  # Pointe directement vers AppConfig pour charger le module
 ]
 
 AUTH_USER_MODEL = 'core.Utilisateur'
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -76,12 +75,6 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Changez DEBUG à True temporairement pour voir les erreurs détaillées
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
-
-# Ajouter cette ligne pour autoriser les requêtes HTTPS de Render
 CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
 ]
@@ -89,5 +82,3 @@ CSRF_TRUSTED_ORIGINS = [
 AUTHENTICATION_BACKENDS = [
     'core.models.CustomAuthBackend',
 ]
-
-
