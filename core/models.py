@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.contrib.auth.hashers import make_password, check_password as django_check_password
-from django.contrib.auth.backends import BaseBackend
 
 class UtilisateurManager(BaseUserManager):
     def create_user(self, identifiant, password=None, **extra_fields):
@@ -35,9 +34,15 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         db_table = 't_utilisateur'
         managed = False
 
+    # Liaison native pour l'authentification Django
     @property
     def password(self):
         return self.mot_de_passe
+
+    @password.setter
+    def password(self, raw_password):
+        if raw_password:
+            self.mot_de_passe = make_password(raw_password)
 
     def set_password(self, raw_password):
         if raw_password:
@@ -62,21 +67,3 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.identifiant
-
-class CustomAuthBackend(BaseBackend):
-    def authenticate(self, request, username=None, password=None, **kwargs):
-        if username is None:
-            username = kwargs.get('identifiant')
-        try:
-            user = Utilisateur.objects.get(identifiant=username)
-            if user.check_password(password):
-                return user
-        except Utilisateur.DoesNotExist:
-            return None
-        return None
-
-    def get_user(self, user_id):
-        try:
-            return Utilisateur.objects.get(pk=user_id)
-        except Utilisateur.DoesNotExist:
-            return None
