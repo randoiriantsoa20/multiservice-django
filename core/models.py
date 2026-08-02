@@ -34,7 +34,7 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         db_table = 't_utilisateur'
         managed = False
 
-    # Liaison native pour l'authentification Django
+    # 1. Alias obligatoire pour que Django voie le champ physique `mot_de_passe` comme `password`
     @property
     def password(self):
         return self.mot_de_passe
@@ -53,6 +53,11 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
             return False
         return django_check_password(raw_password, self.mot_de_passe)
 
+    # 2. Forcer Django à valider que le mot de passe est exploitable
+    def has_usable_password(self):
+        return bool(self.mot_de_passe)
+
+    # 3. Méthodes de permissions indispensables pour l'interface Admin
     @property
     def is_staff(self):
         return True
@@ -63,6 +68,12 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
 
     @property
     def is_active(self):
+        return True
+
+    def has_perm(self, perm, obj=None):
+        return True
+
+    def has_module_perms(self, app_label):
         return True
 
     def __str__(self):
